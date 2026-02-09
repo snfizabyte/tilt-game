@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tilt-to-Learn Game</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3"></script>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Tilt Your Head to Answer!</h1>
+        
+        <div id="video-wrapper">
+            <video id="webcam" autoplay playsinline></video>
+            <div id="tilt-indicator"></div>
+        </div>
+
+        <div id="question-box">
+            <p id="prompt">Loading game...</p>
+            <div class="options">
+                <div id="option-left" class="option-card">⬅️ <span id="label-left">Option A</span></div>
+                <div id="option-right" class="option-card"><span id="label-right">Option B</span> ➡️</div>
+            </div>
+        </div>
+
+        <div id="feedback-overlay" class="hidden">
+            <h2 id="feedback-text">Correct!</h2>
+            <p id="explanation-text"></p>
+            <button onclick="nextQuestion()">Next Question</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
