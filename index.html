@@ -3,93 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Big Text Mode</title>
+    <title>Olive Oil Quiz - Auto Advance</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; text-align: center; margin: 0; padding: 10px; color: #333; }
-        
-        #game-container { 
-            max-width: 900px; /* Wider for projection */
-            margin: auto; 
-            background: white; 
-            padding: 30px; 
-            border-radius: 20px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
-        }
-
-        /* Large Title and Score */
-        h1 { font-size: 36px; color: #556b2f; margin: 0; }
-        #score-display { font-size: 24px; font-weight: bold; color: #556b2f; margin-bottom: 15px; }
-
-        /* Camera Box */
-        #video-wrapper { 
-            position: relative; 
-            width: 240px; 
-            height: 180px; 
-            margin: 0 auto 20px; 
-            background: #000; 
-            border-radius: 15px; 
-            overflow: hidden; 
-            border: 5px solid #556b2f; 
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; text-align: center; margin: 0; padding: 20px; color: #333; }
+        #game-container { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        #score-display { font-weight: bold; color: #556b2f; margin-bottom: 10px; font-size: 18px; }
+        #video-wrapper { position: relative; width: 280px; height: 210px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 3px solid #556b2f; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
-
-        /* THE BIG PROMPT */
-        #prompt { 
-            font-size: 32px; /* Large for projector */
-            line-height: 1.3;
-            min-height: 100px; 
-            font-weight: 800; 
-            margin-bottom: 30px; 
-            padding: 0 20px;
-            color: #1a252f;
-        }
-
-        /* BIG OPTIONS */
-        .options { display: flex; justify-content: space-between; gap: 30px; }
-        .option-card { 
-            flex: 1; 
-            padding: 40px 20px; /* Taller boxes */
-            border: 6px solid #eee; 
-            border-radius: 20px; 
-            font-size: 38px; /* Massive text for A/B */
-            font-weight: 900; 
-            background: #fafafa; 
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-
-        /* High-Contrast Highlights */
-        .active-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.08); box-shadow: 0 0 20px rgba(52, 152, 219, 0.5); }
-        .active-right { border-color: #e67e22; background: #fff3e0; transform: scale(1.08); box-shadow: 0 0 20px rgba(230, 126, 34, 0.5); }
-
-        /* BIG FEEDBACK */
-        #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 40px; }
-        #feedback-text { font-size: 60px; font-weight: 900; margin-bottom: 20px; }
-        #explanation-text { font-size: 30px; max-width: 800px; line-height: 1.4; margin-bottom: 30px; }
-        
-        #progress-bar-container { width: 400px; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; }
-        #progress-bar { width: 100%; height: 100%; background: #556b2f; }
-        #timer-msg { font-size: 20px; font-weight: bold; color: #777; margin-top: 15px; }
-
+        .options { display: flex; justify-content: space-between; gap: 15px; margin-top: 10px; }
+        .option-card { flex: 1; padding: 25px; border: 4px solid #eee; border-radius: 15px; font-size: 20px; font-weight: bold; background: #fafafa; transition: 0.3s; }
+        .active-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.05); }
+        .active-right { border-color: #e67e22; background: #fff3e0; transform: scale(1.05); }
+        #prompt { font-size: 19px; min-height: 50px; font-weight: 600; margin-bottom: 20px; padding: 0 10px; }
+        #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
         .hidden { display: none !important; }
+        #timer-msg { color: #888; font-size: 14px; margin-top: 20px; font-style: italic; }
+        #progress-bar-container { width: 200px; height: 10px; background: #eee; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        #progress-bar { width: 100%; height: 100%; background: #556b2f; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <h1>🫒 OLIVE OIL QUIZ 🫒</h1>
-        <div id="score-display">Q: 1 / 11 | Score: 0</div>
+        <div id="score-display">Question: 1 / 11 | Score: 0</div>
         
         <div id="video-wrapper">
             <video id="webcam" playsinline></video>
         </div>
 
         <div id="question-box">
-            <p id="prompt">LOADING...</p>
+            <p id="prompt">Loading Quiz...</p>
             <div class="options">
                 <div id="option-left" class="option-card">⬅️ <span id="label-left">-</span></div>
                 <div id="option-right" class="option-card"><span id="label-right">-</span> ➡️</div>
@@ -100,7 +47,7 @@
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
             <div id="progress-bar-container"><div id="progress-bar"></div></div>
-            <p id="timer-msg">Next in 5 seconds...</p>
+            <p id="timer-msg">Next question in 5 seconds...</p>
         </div>
     </div>
 
@@ -108,15 +55,15 @@
         const questions = [
             { prompt: "Olive oil comes from olives.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive oil is made from olives." },
             { prompt: "People started growing olive trees about 6,000 years ago.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive trees have been grown for around 6,000 years." },
-            { prompt: "China produces the most olive oil in the world.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Spain is actually the world’s biggest producer." },
+            { prompt: "China produces the most olive oil in the world.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Correct! Spain is the world’s biggest producer." },
             { prompt: "Farmers crush olives to get olive oil.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Crushing olives is part of the oil-making process." },
             { prompt: "Olive oil was only used for cooking in the past.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "It was also used for medicine, lamps, and during wars." },
             { prompt: "Olive oil is unhealthy for the heart.", optionA: "TRUE", optionB: "FALSE", correctAnswer: "RIGHT", explanation: "Studies show olive oil is good for heart health." },
             { prompt: "Which word best describes olive oil?", optionA: "Solid", optionB: "Liquid", correctAnswer: "RIGHT", explanation: "Olive oil can be poured easily, so it is a liquid." },
-            { prompt: "What does the word 'crush' mean in the text?", optionA: "Press hard", optionB: "Cut soft", correctAnswer: "LEFT", explanation: "To crush means to press something very hard." },
+            { prompt: "What does the word 'crush' mean in the text?", optionA: "Press very hard", optionB: "Cut carefully", correctAnswer: "LEFT", explanation: "To crush means to press something very hard." },
             { prompt: "Why do some farmers still harvest olives by hand?", optionA: "Fast machines", optionB: "Tradition", correctAnswer: "RIGHT", explanation: "Some farmers keep ancient traditions." },
             { prompt: "Which group of people traditionally uses olive oil?", optionA: "Mediterranean", optionB: "Polar region", correctAnswer: "LEFT", explanation: "Olive oil is traditionally used in Mediterranean countries." },
-            { prompt: "What happens after olives are crushed?", optionA: "Frozen", optionB: "Separated", correctAnswer: "RIGHT", explanation: "The oil is separated from the water after crushing." }
+            { prompt: "What happens after olives are crushed?", optionA: "Frozen", optionB: "Water separation", correctAnswer: "RIGHT", explanation: "The oil is separated from the water after crushing." }
         ];
 
         let currentQuestionIndex = 0;
@@ -135,6 +82,7 @@
         faceMesh.onResults(onResults);
 
         function onResults(results) {
+            // SAFETY LOCK: Ignore camera if we are already showing feedback
             if (isAnswered || !results.multiFaceLandmarks) return;
             const landmarks = results.multiFaceLandmarks[0];
             let tilt = landmarks[33].y - landmarks[263].y;
@@ -155,7 +103,7 @@
         }
 
         function checkAnswer(side) {
-            if (isAnswered) return;
+            if (isAnswered) return; // Prevent double triggers
             isAnswered = true;
 
             const q = questions[currentQuestionIndex];
@@ -163,16 +111,17 @@
             
             if (side === q.correctAnswer) {
                 score++;
-                feedbackText.innerText = "🌟 CORRECT! 🌟";
+                feedbackText.innerText = "🌟 Correct! 🌟";
                 feedbackText.style.color = "#27ae60";
             } else {
-                feedbackText.innerText = "❌ INCORRECT ❌";
+                feedbackText.innerText = "❌ Incorrect ❌";
                 feedbackText.style.color = "#e74c3c";
             }
             
             document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
             
+            // Visual Progress Bar Countdown
             progressBar.style.transition = 'none';
             progressBar.style.width = '100%';
             setTimeout(() => {
@@ -180,25 +129,33 @@
                 progressBar.style.width = '0%';
             }, 50);
 
+            // AUTOMATIC MOVE AFTER 5 SECONDS
             setTimeout(() => {
-                if (currentQuestionIndex < questions.length - 1) {
-                    currentQuestionIndex++;
-                    isAnswered = false;
-                    document.getElementById('feedback-overlay').classList.add('hidden');
-                    document.getElementById('option-left').classList.remove('active-left');
-                    document.getElementById('option-right').classList.remove('active-right');
-                    updateUI();
-                } else {
-                    showFinalScore();
-                }
+                handleNextStep();
             }, 5000);
         }
 
+        function handleNextStep() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                isAnswered = false; // Reset for next detection
+                document.getElementById('feedback-overlay').classList.add('hidden');
+                
+                // Clear visual highlight from cards
+                document.getElementById('option-left').classList.remove('active-left');
+                document.getElementById('option-right').classList.remove('active-right');
+                
+                updateUI();
+            } else {
+                showFinalScore();
+            }
+        }
+
         function showFinalScore() {
-            document.getElementById('timer-msg').innerText = "DONE!";
-            document.getElementById('feedback-text').innerText = "QUIZ COMPLETE!";
-            document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Score: ${score} / 11</span>`;
-            setTimeout(() => location.reload(), 7000);
+            document.getElementById('timer-msg').innerText = "Quiz Finished!";
+            document.getElementById('feedback-text').innerText = "Well Done!";
+            document.getElementById('explanation-text').innerHTML = `Final Score: <strong>${score} / 11</strong><br>Refreshing page to restart...`;
+            setTimeout(() => location.reload(), 6000);
         }
 
         function updateUI() {
@@ -206,7 +163,7 @@
             promptElement.innerText = q.prompt;
             document.getElementById('label-left').innerText = q.optionA;
             document.getElementById('label-right').innerText = q.optionB;
-            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / 11 | Score: ${score}`;
+            document.getElementById('score-display').innerText = `Question: ${currentQuestionIndex + 1} / 11 | Score: ${score}`;
         }
 
         const camera = new Camera(videoElement, {
