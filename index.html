@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Stable Mode</title>
-    
+    <title>Olive Oil Quiz - Easy Detect</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; text-align: center; margin: 0; padding: 10px; }
         #game-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
@@ -15,35 +13,28 @@
         #score-display { font-size: 24px; font-weight: bold; color: #556b2f; margin-bottom: 15px; }
         #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #556b2f; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
-        
-        /* Progress circle for the "Hold" timer */
-        #hold-progress { position: absolute; bottom: 0; left: 0; height: 8px; background: #27ae60; width: 0%; transition: width 0.1s linear; }
-
-        #prompt { font-size: 32px; line-height: 1.3; min-height: 100px; font-weight: 800; margin-bottom: 30px; padding: 0 20px; color: #1a252f; }
+        #hold-progress { position: absolute; bottom: 0; left: 0; height: 10px; background: #27ae60; width: 0%; transition: width 0.05s linear; }
+        #prompt { font-size: 32px; line-height: 1.3; min-height: 100px; font-weight: 800; margin-bottom: 30px; color: #1a252f; }
         .options { display: flex; justify-content: space-between; gap: 30px; }
-        .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 38px; font-weight: 900; background: #fafafa; transition: 0.3s; }
-        
-        /* visual cue when student is "holding" the tilt */
+        .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 38px; font-weight: 900; background: #fafafa; }
         .tilting-left { border-color: #3498db; background: #e1f5fe; }
         .tilting-right { border-color: #e67e22; background: #fff3e0; }
-
         #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 40px; }
-        #feedback-text { font-size: 60px; font-weight: 900; margin-bottom: 20px; }
+        #feedback-text { font-size: 60px; font-weight: 900; }
         #explanation-text { font-size: 30px; max-width: 800px; line-height: 1.4; margin-bottom: 30px; }
-        
+        #progress-bar-container { width: 400px; height: 15px; background: #eee; border-radius: 10px; overflow: hidden; }
+        #progress-bar { width: 100%; height: 100%; background: #556b2f; }
         .hidden { display: none !important; }
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #556b2f; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
-        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; border: none; background: white; color: #556b2f; font-weight: bold; }
+        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; background: white; color: #556b2f; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div id="start-overlay">
         <h1>Olive Oil Tilt Quiz</h1>
-        <p style="font-size: 20px; margin-bottom: 30px;">Hold your tilt for 1 second to answer!</p>
+        <p style="font-size: 20px; margin-bottom: 30px;">Lightly tilt your head to answer!</p>
         <button class="start-btn" onclick="startGame()">START GAME 🚀</button>
     </div>
-
     <div id="game-container">
         <h1>🫒 OLIVE OIL QUIZ 🫒</h1>
         <div id="score-display">Q: 1 / 11 | Score: 0</div>
@@ -61,15 +52,14 @@
         <div id="feedback-overlay" class="hidden">
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
-            <p style="font-size: 20px; color: #777;">Next question in 5 seconds...</p>
+            <div id="progress-bar-container"><div id="progress-bar"></div></div>
         </div>
     </div>
-
     <script>
         const questions = [
             { prompt: "Olive oil comes from olives.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive oil is made from olives." },
             { prompt: "People started growing olive trees about 6,000 years ago.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive trees have been grown for around 6,000 years." },
-            { prompt: "China produces the most olive oil in the world.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Spain is actually the world’s biggest producer." },
+            { prompt: "China produces the most olive oil in the world.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Correct! Spain is actually the world’s biggest producer." },
             { prompt: "Farmers crush olives to get olive oil.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Crushing olives is part of the oil-making process." },
             { prompt: "Olive oil was only used for cooking in the past.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "It was also used for medicine, lamps, and during wars." },
             { prompt: "Olive oil is unhealthy for the heart.", optionA: "TRUE", optionB: "FALSE", correctAnswer: "RIGHT", explanation: "Studies show olive oil is good for heart health." },
@@ -83,18 +73,18 @@
         let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
-        
-        // HOLD TIMER LOGIC
         let holdCounter = 0;
-        const requiredHoldFrames = 30; // ~1 second at 30fps
+        const requiredHoldFrames = 12; // Very fast confirm (0.4s)
         let currentDetectedSide = null;
 
         const videoElement = document.getElementById('webcam');
         const promptElement = document.getElementById('prompt');
         const holdBar = document.getElementById('hold-progress');
+        const nextProgressBar = document.getElementById('progress-bar');
 
         const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        // Increased confidence levels for harder lighting
+        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
         faceMesh.onResults(onResults);
 
         function startGame() {
@@ -108,37 +98,33 @@
 
         function onResults(results) {
             if (isAnswered || !results.multiFaceLandmarks) return;
-            
             const landmarks = results.multiFaceLandmarks[0];
             let tilt = landmarks[33].y - landmarks[263].y;
 
             const leftCard = document.getElementById('option-left');
             const rightCard = document.getElementById('option-right');
 
-            // Threshold increased to 0.05 for even better stability
-            if (tilt > 0.05) { 
+            // Sensitivity set to 0.02 (very easy to trigger)
+            if (tilt > 0.02) { 
                 currentDetectedSide = "RIGHT";
                 leftCard.classList.remove('tilting-left');
                 rightCard.classList.add('tilting-right');
                 holdCounter++;
-            } else if (tilt < -0.05) {
+            } else if (tilt < -0.02) {
                 currentDetectedSide = "LEFT";
                 rightCard.classList.remove('tilting-right');
                 leftCard.classList.add('tilting-left');
                 holdCounter++;
             } else {
-                // Neutral position - reset everything
                 currentDetectedSide = null;
                 holdCounter = 0;
                 leftCard.classList.remove('tilting-left');
                 rightCard.classList.remove('tilting-right');
             }
 
-            // Update visual hold bar
             let progress = (holdCounter / requiredHoldFrames) * 100;
             holdBar.style.width = Math.min(progress, 100) + "%";
 
-            // If held long enough, confirm answer
             if (holdCounter >= requiredHoldFrames) {
                 checkAnswer(currentDetectedSide);
                 holdCounter = 0;
@@ -150,7 +136,6 @@
             isAnswered = true;
             const q = questions[currentQuestionIndex];
             const feedbackText = document.getElementById('feedback-text');
-            
             if (side === q.correctAnswer) {
                 score++;
                 feedbackText.innerText = "🌟 CORRECT! 🌟";
@@ -159,9 +144,15 @@
                 feedbackText.innerText = "❌ INCORRECT ❌";
                 feedbackText.style.color = "#e74c3c";
             }
-            
             document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
+
+            nextProgressBar.style.transition = 'none';
+            nextProgressBar.style.width = '100%';
+            setTimeout(() => {
+                nextProgressBar.style.transition = 'width 3s linear';
+                nextProgressBar.style.width = '0%';
+            }, 50);
 
             setTimeout(() => {
                 if (currentQuestionIndex < questions.length - 1) {
@@ -172,13 +163,13 @@
                 } else {
                     showFinalScore();
                 }
-            }, 5000);
+            }, 3000);
         }
 
         function showFinalScore() {
             document.getElementById('feedback-text').innerText = "DONE!";
             document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Score: ${score} / 11</span>`;
-            setTimeout(() => location.reload(), 8000);
+            setTimeout(() => location.reload(), 5000);
         }
 
         function updateUI() {
