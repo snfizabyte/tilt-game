@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Stable Detection</title>
+    <title>Olive Oil Quiz - Stable Mode</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -15,16 +15,22 @@
         #score-display { font-size: 24px; font-weight: bold; color: #556b2f; margin-bottom: 15px; }
         #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #556b2f; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
+        
+        /* Progress circle for the "Hold" timer */
+        #hold-progress { position: absolute; bottom: 0; left: 0; height: 8px; background: #27ae60; width: 0%; transition: width 0.1s linear; }
+
         #prompt { font-size: 32px; line-height: 1.3; min-height: 100px; font-weight: 800; margin-bottom: 30px; padding: 0 20px; color: #1a252f; }
         .options { display: flex; justify-content: space-between; gap: 30px; }
         .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 38px; font-weight: 900; background: #fafafa; transition: 0.3s; }
-        .active-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.08); }
-        .active-right { border-color: #e67e22; background: #fff3e0; transform: scale(1.08); }
+        
+        /* visual cue when student is "holding" the tilt */
+        .tilting-left { border-color: #3498db; background: #e1f5fe; }
+        .tilting-right { border-color: #e67e22; background: #fff3e0; }
+
         #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 40px; }
         #feedback-text { font-size: 60px; font-weight: 900; margin-bottom: 20px; }
         #explanation-text { font-size: 30px; max-width: 800px; line-height: 1.4; margin-bottom: 30px; }
-        #progress-bar-container { width: 400px; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; }
-        #progress-bar { width: 100%; height: 100%; background: #556b2f; }
+        
         .hidden { display: none !important; }
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #556b2f; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
         .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; border: none; background: white; color: #556b2f; font-weight: bold; }
@@ -34,16 +40,19 @@
 
     <div id="start-overlay">
         <h1>Olive Oil Tilt Quiz</h1>
-        <p style="font-size: 20px; margin-bottom: 30px;">Ready to start the lesson?</p>
+        <p style="font-size: 20px; margin-bottom: 30px;">Hold your tilt for 1 second to answer!</p>
         <button class="start-btn" onclick="startGame()">START GAME 🚀</button>
     </div>
 
     <div id="game-container">
         <h1>🫒 OLIVE OIL QUIZ 🫒</h1>
         <div id="score-display">Q: 1 / 11 | Score: 0</div>
-        <div id="video-wrapper"><video id="webcam" playsinline></video></div>
+        <div id="video-wrapper">
+            <video id="webcam" playsinline></video>
+            <div id="hold-progress"></div>
+        </div>
         <div id="question-box">
-            <p id="prompt">Initializing...</p>
+            <p id="prompt">Loading...</p>
             <div class="options">
                 <div id="option-left" class="option-card">⬅️ <span id="label-left">-</span></div>
                 <div id="option-right" class="option-card"><span id="label-right">-</span> ➡️</div>
@@ -52,8 +61,7 @@
         <div id="feedback-overlay" class="hidden">
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
-            <div id="progress-bar-container"><div id="progress-bar"></div></div>
-            <p style="font-size: 18px; color: #777; margin-top: 10px;">Next question starting soon...</p>
+            <p style="font-size: 20px; color: #777;">Next question in 5 seconds...</p>
         </div>
     </div>
 
@@ -75,11 +83,15 @@
         let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
-        let tiltTimer = null; // New timer to prevent "fast" detection
         
+        // HOLD TIMER LOGIC
+        let holdCounter = 0;
+        const requiredHoldFrames = 30; // ~1 second at 30fps
+        let currentDetectedSide = null;
+
         const videoElement = document.getElementById('webcam');
         const promptElement = document.getElementById('prompt');
-        const progressBar = document.getElementById('progress-bar');
+        const holdBar = document.getElementById('hold-progress');
 
         const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
         faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
@@ -96,41 +108,46 @@
 
         function onResults(results) {
             if (isAnswered || !results.multiFaceLandmarks) return;
+            
             const landmarks = results.multiFaceLandmarks[0];
             let tilt = landmarks[33].y - landmarks[263].y;
 
             const leftCard = document.getElementById('option-left');
             const rightCard = document.getElementById('option-right');
 
-            // DETECTION LOGIC WITH "HOLD" REQUIREMENT
-            if (tilt > 0.04) { // Right Tilt
-                rightCard.classList.add('active-right');
-                startTiltTimer("RIGHT");
-            } else if (tilt < -0.04) { // Left Tilt
-                leftCard.classList.add('active-left');
-                startTiltTimer("LEFT");
+            // Threshold increased to 0.05 for even better stability
+            if (tilt > 0.05) { 
+                currentDetectedSide = "RIGHT";
+                leftCard.classList.remove('tilting-left');
+                rightCard.classList.add('tilting-right');
+                holdCounter++;
+            } else if (tilt < -0.05) {
+                currentDetectedSide = "LEFT";
+                rightCard.classList.remove('tilting-right');
+                leftCard.classList.add('tilting-left');
+                holdCounter++;
             } else {
-                // User is in neutral position - cancel timers
-                leftCard.classList.remove('active-left');
-                rightCard.classList.remove('active-right');
-                clearTimeout(tiltTimer);
-                tiltTimer = null;
+                // Neutral position - reset everything
+                currentDetectedSide = null;
+                holdCounter = 0;
+                leftCard.classList.remove('tilting-left');
+                rightCard.classList.remove('tilting-right');
             }
-        }
 
-        function startTiltTimer(side) {
-            if (!tiltTimer) {
-                tiltTimer = setTimeout(() => {
-                    checkAnswer(side);
-                }, 600) // Student must hold tilt for 0.6 seconds
+            // Update visual hold bar
+            let progress = (holdCounter / requiredHoldFrames) * 100;
+            holdBar.style.width = Math.min(progress, 100) + "%";
+
+            // If held long enough, confirm answer
+            if (holdCounter >= requiredHoldFrames) {
+                checkAnswer(currentDetectedSide);
+                holdCounter = 0;
+                holdBar.style.width = "0%";
             }
         }
 
         function checkAnswer(side) {
-            if (isAnswered) return;
             isAnswered = true;
-            clearTimeout(tiltTimer);
-
             const q = questions[currentQuestionIndex];
             const feedbackText = document.getElementById('feedback-text');
             
@@ -145,21 +162,12 @@
             
             document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
-            
-            progressBar.style.transition = 'none';
-            progressBar.style.width = '100%';
-            setTimeout(() => {
-                progressBar.style.transition = 'width 5s linear';
-                progressBar.style.width = '0%';
-            }, 50);
 
             setTimeout(() => {
                 if (currentQuestionIndex < questions.length - 1) {
                     currentQuestionIndex++;
                     isAnswered = false;
                     document.getElementById('feedback-overlay').classList.add('hidden');
-                    document.getElementById('option-left').classList.remove('active-left');
-                    document.getElementById('option-right').classList.remove('active-right');
                     updateUI();
                 } else {
                     showFinalScore();
