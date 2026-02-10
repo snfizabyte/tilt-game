@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - 5 Second Timer</title>
+    <title>Olive Oil Quiz - Auto Advance</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -23,7 +23,7 @@
         .hidden { display: none !important; }
         #timer-msg { color: #888; font-size: 14px; margin-top: 20px; font-style: italic; }
         #progress-bar-container { width: 200px; height: 10px; background: #eee; border-radius: 5px; margin-top: 10px; overflow: hidden; }
-        #progress-bar { width: 100%; height: 100%; background: #556b2f; transition: width 5s linear; }
+        #progress-bar { width: 100%; height: 100%; background: #556b2f; }
     </style>
 </head>
 <body>
@@ -82,6 +82,7 @@
         faceMesh.onResults(onResults);
 
         function onResults(results) {
+            // SAFETY LOCK: Ignore camera if we are already showing feedback
             if (isAnswered || !results.multiFaceLandmarks) return;
             const landmarks = results.multiFaceLandmarks[0];
             let tilt = landmarks[33].y - landmarks[263].y;
@@ -102,7 +103,9 @@
         }
 
         function checkAnswer(side) {
+            if (isAnswered) return; // Prevent double triggers
             isAnswered = true;
+
             const q = questions[currentQuestionIndex];
             const feedbackText = document.getElementById('feedback-text');
             
@@ -118,31 +121,40 @@
             document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
             
-            // Reset and start visual progress bar
+            // Visual Progress Bar Countdown
             progressBar.style.transition = 'none';
             progressBar.style.width = '100%';
             setTimeout(() => {
                 progressBar.style.transition = 'width 5s linear';
                 progressBar.style.width = '0%';
-            }, 10);
+            }, 50);
 
-            // AUTOMATIC NEXT AFTER 5 SECONDS
+            // AUTOMATIC MOVE AFTER 5 SECONDS
             setTimeout(() => {
-                if (currentQuestionIndex < questions.length - 1) {
-                    currentQuestionIndex++;
-                    isAnswered = false;
-                    document.getElementById('feedback-overlay').classList.add('hidden');
-                    updateUI();
-                } else {
-                    showFinalScore();
-                }
+                handleNextStep();
             }, 5000);
         }
 
+        function handleNextStep() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                isAnswered = false; // Reset for next detection
+                document.getElementById('feedback-overlay').classList.add('hidden');
+                
+                // Clear visual highlight from cards
+                document.getElementById('option-left').classList.remove('active-left');
+                document.getElementById('option-right').classList.remove('active-right');
+                
+                updateUI();
+            } else {
+                showFinalScore();
+            }
+        }
+
         function showFinalScore() {
-            document.getElementById('timer-msg').innerText = "Game Over!";
+            document.getElementById('timer-msg').innerText = "Quiz Finished!";
             document.getElementById('feedback-text').innerText = "Well Done!";
-            document.getElementById('explanation-text').innerHTML = `Final Score: <strong>${score} / 11</strong><br>Refreshing soon...`;
+            document.getElementById('explanation-text').innerHTML = `Final Score: <strong>${score} / 11</strong><br>Refreshing page to restart...`;
             setTimeout(() => location.reload(), 6000);
         }
 
