@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Mirror Fixed</title>
+    <title>Olive Oil Quiz - Final Logic Fix</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -13,7 +13,7 @@
         #game-container { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         #score-display { font-weight: bold; color: #556b2f; margin-bottom: 10px; font-size: 18px; }
         #video-wrapper { position: relative; width: 280px; height: 210px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 3px solid #556b2f; }
-        #webcam { width: 100%; height: 100%; transform: scaleX(-1); } /* Mirroring for student comfort */
+        #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
         .options { display: flex; justify-content: space-between; gap: 15px; margin-top: 10px; }
         .option-card { flex: 1; padding: 25px; border: 4px solid #eee; border-radius: 15px; font-size: 22px; font-weight: bold; background: #fafafa; }
         .active-left { border-color: #3498db; background: #e1f5fe; }
@@ -34,10 +34,10 @@
         </div>
 
         <div id="question-box">
-            <p id="prompt">Preparing your lesson...</p>
+            <p id="prompt">Starting your Olive Oil lesson...</p>
             <div class="options">
-                <div id="option-left" class="option-card">⬅️ <span id="label-left">FALSE</span></div>
-                <div id="option-right" class="option-card"><span id="label-right">TRUE</span> ➡️</div>
+                <div id="option-left" class="option-card">⬅️ <span id="label-left">-</span></div>
+                <div id="option-right" class="option-card"><span id="label-right">-</span> ➡️</div>
             </div>
         </div>
 
@@ -81,14 +81,13 @@
             if (isAnswered || !results.multiFaceLandmarks) return;
             const landmarks = results.multiFaceLandmarks[0];
             
-            // This math is now specifically tuned for a mirrored laptop camera
-            // Right tilt = landmarks[263].y - landmarks[33].y is POSITIVE
-            let tilt = landmarks[263].y - landmarks[33].y;
+            // MATH FIX: Using the y-difference of the eye corners
+            // On a mirrored camera, tilting right makes landmarks[263].y lower than landmarks[33].y
+            let tilt = landmarks[33].y - landmarks[263].y;
 
             const leftCard = document.getElementById('option-left');
             const rightCard = document.getElementById('option-right');
 
-            // If you tilt toward the RIGHT on your screen (Option B/TRUE)
             if (tilt > 0.04) { 
                 rightCard.classList.add('active-right');
                 checkAnswer("RIGHT");
@@ -108,4 +107,40 @@
             if (side === q.correctAnswer) {
                 score++;
                 feedbackText.innerText = "🌟 Correct! 🌟";
-                feedbackText.style.color =
+                feedbackText.style.color = "#27ae60";
+            } else {
+                feedbackText.innerText = "❌ Incorrect ❌";
+                feedbackText.style.color = "#e74c3c";
+            }
+            document.getElementById('explanation-text').innerText = q.explanation;
+            document.getElementById('feedback-overlay').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                isAnswered = false;
+                document.getElementById('feedback-overlay').classList.add('hidden');
+                updateUI();
+            } else {
+                alert(`Quiz Over! You scored ${score} / 11`);
+                location.reload();
+            }
+        }
+
+        function updateUI() {
+            const q = questions[currentQuestionIndex];
+            promptElement.innerText = q.prompt;
+            document.getElementById('label-left').innerText = q.optionA;
+            document.getElementById('label-right').innerText = q.optionB;
+            document.getElementById('score-display').innerText = `Question: ${currentQuestionIndex + 1} / 11 | Score: ${score}`;
+        }
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({image: videoElement}); },
+            width: 480, height: 360
+        });
+        camera.start().then(() => { updateUI(); });
+    </script>
+</body>
+</html>
