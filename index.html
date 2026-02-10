@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Final Logic Fix</title>
+    <title>Olive Oil Quiz - Mixed Directions</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -15,10 +15,10 @@
         #video-wrapper { position: relative; width: 280px; height: 210px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 3px solid #556b2f; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
         .options { display: flex; justify-content: space-between; gap: 15px; margin-top: 10px; }
-        .option-card { flex: 1; padding: 25px; border: 4px solid #eee; border-radius: 15px; font-size: 22px; font-weight: bold; background: #fafafa; }
+        .option-card { flex: 1; padding: 25px; border: 4px solid #eee; border-radius: 15px; font-size: 20px; font-weight: bold; background: #fafafa; }
         .active-left { border-color: #3498db; background: #e1f5fe; }
         .active-right { border-color: #e67e22; background: #fff3e0; }
-        #prompt { font-size: 20px; min-height: 50px; font-weight: 600; margin-bottom: 20px; padding: 0 10px; }
+        #prompt { font-size: 19px; min-height: 50px; font-weight: 600; margin-bottom: 20px; padding: 0 10px; }
         #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
         .hidden { display: none !important; }
         .action-btn { padding: 15px 40px; font-size: 20px; cursor: pointer; background: #556b2f; color: white; border: none; border-radius: 10px; font-weight: bold; }
@@ -34,7 +34,7 @@
         </div>
 
         <div id="question-box">
-            <p id="prompt">Starting your Olive Oil lesson...</p>
+            <p id="prompt">Loading Quiz...</p>
             <div class="options">
                 <div id="option-left" class="option-card">⬅️ <span id="label-left">-</span></div>
                 <div id="option-right" class="option-card"><span id="label-right">-</span> ➡️</div>
@@ -50,16 +50,33 @@
 
     <script>
         const questions = [
+            // Q1 & Q2: Correct Answer RIGHT
             { prompt: "Olive oil comes from olives.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive oil is made from olives." },
             { prompt: "People started growing olive trees about 6,000 years ago.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "The text says olive trees have been grown for around 6,000 years." },
-            { prompt: "China produces the most olive oil in the world.", optionA: "TRUE", optionB: "FALSE", correctAnswer: "RIGHT", explanation: "Spain is the world’s biggest producer of olive oil, not China." },
+            
+            // Q3: Correct Answer LEFT (requested)
+            { prompt: "China produces the most olive oil in the world.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Correct! China does NOT produce the most; Spain is the biggest producer." },
+            
+            // Q4: Correct Answer RIGHT
             { prompt: "Farmers crush olives to get olive oil.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Crushing olives is part of the oil-making process." },
-            { prompt: "Olive oil was only used for cooking in the past.", optionA: "TRUE", optionB: "FALSE", correctAnswer: "RIGHT", explanation: "It was also used for medicine, lamps, and during wars." },
+            
+            // Q5: Correct Answer LEFT (requested)
+            { prompt: "Olive oil was only used for cooking in the past.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Correct! It was NOT only for cooking; it was used for lamps and medicine too." },
+            
+            // Q6 & Q7: Correct Answer RIGHT
             { prompt: "Olive oil is unhealthy for the heart.", optionA: "TRUE", optionB: "FALSE", correctAnswer: "RIGHT", explanation: "Studies show olive oil is good for heart health." },
             { prompt: "Which word best describes olive oil?", optionA: "Solid", optionB: "Liquid", correctAnswer: "RIGHT", explanation: "Olive oil can be poured easily, so it is a liquid." },
-            { prompt: "What does the word 'crush' mean in the text?", optionA: "Cut carefully", optionB: "Press very hard", correctAnswer: "RIGHT", explanation: "To crush means to press something very hard." },
+            
+            // Q8: Correct Answer LEFT (requested)
+            { prompt: "What does the word 'crush' mean in the text?", optionA: "Press very hard", optionB: "Cut carefully", correctAnswer: "LEFT", explanation: "To crush means to press something very hard." },
+            
+            // Q9: Correct Answer RIGHT
             { prompt: "Why do some farmers still harvest olives by hand?", optionA: "Fast machines", optionB: "Tradition", correctAnswer: "RIGHT", explanation: "The text says some farmers keep ancient traditions." },
-            { prompt: "Which group of people traditionally uses olive oil?", optionA: "Polar region", optionB: "Mediterranean", correctAnswer: "RIGHT", explanation: "Olive oil is traditionally used in Mediterranean countries." },
+            
+            // Q10: Correct Answer LEFT (requested)
+            { prompt: "Which group of people traditionally uses olive oil?", optionA: "Mediterranean", optionB: "Polar region", correctAnswer: "LEFT", explanation: "Olive oil is traditionally used in Mediterranean countries." },
+            
+            // Q11: Correct Answer RIGHT
             { prompt: "What happens after olives are crushed?", optionA: "Frozen", optionB: "Water separation", correctAnswer: "RIGHT", explanation: "After crushing, the oil is separated from the water." }
         ];
 
@@ -80,9 +97,6 @@
         function onResults(results) {
             if (isAnswered || !results.multiFaceLandmarks) return;
             const landmarks = results.multiFaceLandmarks[0];
-            
-            // MATH FIX: Using the y-difference of the eye corners
-            // On a mirrored camera, tilting right makes landmarks[263].y lower than landmarks[33].y
             let tilt = landmarks[33].y - landmarks[263].y;
 
             const leftCard = document.getElementById('option-left');
