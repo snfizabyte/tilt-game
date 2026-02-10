@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Stable Version</title>
+    <title>Olive Oil Quiz - Mirror Fixed</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -12,18 +12,16 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; text-align: center; margin: 0; padding: 20px; color: #333; }
         #game-container { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         #score-display { font-weight: bold; color: #556b2f; margin-bottom: 10px; font-size: 18px; }
-        #video-wrapper { position: relative; width: 280px; height: 210px; margin: 0 auto 10px; background: #000; border-radius: 15px; overflow: hidden; border: 3px solid #556b2f; }
-        #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
-        .swap-btn { background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; margin-bottom: 15px; transition: 0.3s; }
-        .swap-btn:active { transform: scale(0.95); opacity: 0.8; }
+        #video-wrapper { position: relative; width: 280px; height: 210px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 3px solid #556b2f; }
+        #webcam { width: 100%; height: 100%; transform: scaleX(-1); } /* Mirroring for student comfort */
         .options { display: flex; justify-content: space-between; gap: 15px; margin-top: 10px; }
-        .option-card { flex: 1; padding: 20px; border: 4px solid #eee; border-radius: 15px; font-size: 20px; font-weight: bold; background: #fafafa; }
+        .option-card { flex: 1; padding: 25px; border: 4px solid #eee; border-radius: 15px; font-size: 22px; font-weight: bold; background: #fafafa; }
         .active-left { border-color: #3498db; background: #e1f5fe; }
         .active-right { border-color: #e67e22; background: #fff3e0; }
-        #prompt { font-size: 20px; min-height: 50px; font-weight: 600; margin-bottom: 15px; }
+        #prompt { font-size: 20px; min-height: 50px; font-weight: 600; margin-bottom: 20px; padding: 0 10px; }
         #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
         .hidden { display: none !important; }
-        .action-btn { padding: 15px 40px; font-size: 20px; cursor: pointer; background: #556b2f; color: white; border: none; border-radius: 10px; }
+        .action-btn { padding: 15px 40px; font-size: 20px; cursor: pointer; background: #556b2f; color: white; border: none; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -35,13 +33,11 @@
             <video id="webcam" playsinline></video>
         </div>
 
-        <button class="swap-btn" onclick="toggleMirror()">🔄 Fix Left/Right Tilt</button>
-
         <div id="question-box">
-            <p id="prompt">Loading AI...</p>
+            <p id="prompt">Preparing your lesson...</p>
             <div class="options">
-                <div id="option-left" class="option-card">⬅️ <span id="label-left">-</span></div>
-                <div id="option-right" class="option-card"><span id="label-right">-</span> ➡️</div>
+                <div id="option-left" class="option-card">⬅️ <span id="label-left">FALSE</span></div>
+                <div id="option-right" class="option-card"><span id="label-right">TRUE</span> ➡️</div>
             </div>
         </div>
 
@@ -70,15 +66,9 @@
         let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
-        let tiltDirection = 1; // Used to flip logic without alerts
         
         const videoElement = document.getElementById('webcam');
         const promptElement = document.getElementById('prompt');
-
-        function toggleMirror() {
-            tiltDirection *= -1; // Simply flips the number between 1 and -1
-            console.log("Tilt logic flipped");
-        }
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
@@ -91,12 +81,14 @@
             if (isAnswered || !results.multiFaceLandmarks) return;
             const landmarks = results.multiFaceLandmarks[0];
             
-            // Apply the tiltDirection multiplier here
-            let tilt = (landmarks[263].y - landmarks[33].y) * tiltDirection;
+            // This math is now specifically tuned for a mirrored laptop camera
+            // Right tilt = landmarks[263].y - landmarks[33].y is POSITIVE
+            let tilt = landmarks[263].y - landmarks[33].y;
 
             const leftCard = document.getElementById('option-left');
             const rightCard = document.getElementById('option-right');
 
+            // If you tilt toward the RIGHT on your screen (Option B/TRUE)
             if (tilt > 0.04) { 
                 rightCard.classList.add('active-right');
                 checkAnswer("RIGHT");
@@ -116,40 +108,4 @@
             if (side === q.correctAnswer) {
                 score++;
                 feedbackText.innerText = "🌟 Correct! 🌟";
-                feedbackText.style.color = "#27ae60";
-            } else {
-                feedbackText.innerText = "❌ Incorrect ❌";
-                feedbackText.style.color = "#e74c3c";
-            }
-            document.getElementById('explanation-text').innerText = q.explanation;
-            document.getElementById('feedback-overlay').classList.remove('hidden');
-        }
-
-        function nextQuestion() {
-            if (currentQuestionIndex < questions.length - 1) {
-                currentQuestionIndex++;
-                isAnswered = false;
-                document.getElementById('feedback-overlay').classList.add('hidden');
-                updateUI();
-            } else {
-                alert(`Quiz Over! Score: ${score} / 11`);
-                location.reload();
-            }
-        }
-
-        function updateUI() {
-            const q = questions[currentQuestionIndex];
-            promptElement.innerText = q.prompt;
-            document.getElementById('label-left').innerText = q.optionA;
-            document.getElementById('label-right').innerText = q.optionB;
-            document.getElementById('score-display').innerText = `Question: ${currentQuestionIndex + 1} / 11 | Score: ${score}`;
-        }
-
-        const camera = new Camera(videoElement, {
-            onFrame: async () => { await faceMesh.send({image: videoElement}); },
-            width: 480, height: 360 // Lower resolution for better speed
-        });
-        camera.start().then(() => { updateUI(); });
-    </script>
-</body>
-</html>
+                feedbackText.style.color =
