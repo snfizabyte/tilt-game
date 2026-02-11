@@ -3,42 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Fast 3s Delay</title>
+    <title>Grammar Tilt - Long vs Short Action</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; text-align: center; margin: 0; padding: 10px; }
-        #game-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        h1 { font-size: 36px; color: #556b2f; margin: 0; }
-        #score-display { font-size: 24px; font-weight: bold; color: #556b2f; margin-bottom: 15px; }
-        #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #556b2f; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; text-align: center; margin: 0; padding: 10px; }
+        #game-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { font-size: 32px; color: #2c3e50; margin: 0; }
+        #score-display { font-size: 24px; font-weight: bold; color: #34495e; margin-bottom: 15px; }
+        #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #2c3e50; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
         #hold-progress { position: absolute; bottom: 0; left: 0; height: 10px; background: #27ae60; width: 0%; transition: width 0.05s linear; }
-        #prompt { font-size: 32px; line-height: 1.3; min-height: 100px; font-weight: 800; margin-bottom: 30px; color: #1a252f; }
+        #prompt { font-size: 36px; line-height: 1.4; min-height: 110px; font-weight: 800; margin-bottom: 30px; color: #2c3e50; padding: 0 20px; }
         .options { display: flex; justify-content: space-between; gap: 30px; }
-        .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 38px; font-weight: 900; background: #fafafa; }
-        .tilting-left { border-color: #3498db; background: #e1f5fe; }
-        .tilting-right { border-color: #e67e22; background: #fff3e0; }
+        .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 32px; font-weight: 900; background: #fafafa; }
+        .tilting-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.05); }
+        .tilting-right { border-color: #e67e22; background: #fff3e0; transform: scale(1.05); }
         #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 40px; }
         #feedback-text { font-size: 60px; font-weight: 900; }
-        #explanation-text { font-size: 30px; max-width: 800px; line-height: 1.4; margin-bottom: 30px; }
+        #explanation-text { font-size: 32px; max-width: 800px; line-height: 1.5; margin-bottom: 30px; }
         #progress-bar-container { width: 400px; height: 15px; background: #eee; border-radius: 10px; overflow: hidden; }
-        #progress-bar { width: 100%; height: 100%; background: #556b2f; }
+        #progress-bar { width: 100%; height: 100%; background: #2c3e50; }
         .hidden { display: none !important; }
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #556b2f; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
-        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; background: white; color: #556b2f; font-weight: bold; }
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
+        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; background: white; color: #2c3e50; font-weight: bold; border: none; }
     </style>
 </head>
 <body>
     <div id="start-overlay">
-        <h1>🫒 Olive Oil Tilt Quiz 🫒</h1>
-        <p style="font-size: 20px; margin-bottom: 30px;">Tilt your head to answer. 3 seconds between questions!</p>
+        <h1>Grammar Tilt Quiz</h1>
+        <p style="font-size: 22px; margin-bottom: 30px;">Tilt LEFT for Long Action | RIGHT for Short Action</p>
         <button class="start-btn" onclick="startGame()">START GAME 🚀</button>
     </div>
 
     <div id="game-container">
-        <h1>🫒 OLIVE OIL QUIZ 🫒</h1>
-        <div id="score-display">Q: 1 / 11 | Score: 0</div>
+        <h1>LONG ACTION vs SHORT ACTION</h1>
+        <div id="score-display">Q: 1 / 10 | Score: 0</div>
         <div id="video-wrapper">
             <video id="webcam" playsinline></video>
             <div id="hold-progress"></div>
@@ -46,38 +46,37 @@
         <div id="question-box">
             <p id="prompt">Loading...</p>
             <div class="options">
-                <div id="option-left" class="option-card">⬅️ <span id="label-left">-</span></div>
-                <div id="option-right" class="option-card"><span id="label-right">-</span> ➡️</div>
+                <div id="option-left" class="option-card">⬅️ LONG ACTION</div>
+                <div id="option-right" class="option-card">SHORT ACTION ➡️</div>
             </div>
         </div>
         <div id="feedback-overlay" class="hidden">
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
             <div id="progress-bar-container"><div id="progress-bar"></div></div>
-            <p style="margin-top:10px; font-size:18px; color:#666;">Next question in 3 seconds...</p>
+            <p style="margin-top:10px; font-size:20px; color:#666;">Next question in 3 seconds...</p>
         </div>
     </div>
 
     <script>
         const questions = [
-            { prompt: "Olive oil comes from olives.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive oil is made from olives." },
-            { prompt: "People started growing olive trees about 6,000 years ago.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive trees have been grown for around 6,000 years." },
-            { prompt: "China produces the most olive oil in the world.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "Correct! Spain is actually the world’s biggest producer." },
-            { prompt: "Farmers crush olives to get olive oil.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Crushing olives is part of the oil-making process." },
-            { prompt: "Olive oil was only used for cooking in the past.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "LEFT", explanation: "It was also used for medicine, lamps, and during wars." },
-            { prompt: "Olive oil is unhealthy for the heart.", optionA: "TRUE", optionB: "FALSE", correctAnswer: "RIGHT", explanation: "Studies show olive oil is good for heart health." },
-            { prompt: "Which word best describes olive oil?", optionA: "Solid", optionB: "Liquid", correctAnswer: "RIGHT", explanation: "Olive oil can be poured easily, so it is a liquid." },
-            { prompt: "What does the word 'crush' mean in the text?", optionA: "Press hard", optionB: "Cut soft", correctAnswer: "LEFT", explanation: "To crush means to press something very hard." },
-            { prompt: "Why do some farmers still harvest olives by hand?", optionA: "Fast machines", optionB: "Tradition", correctAnswer: "RIGHT", explanation: "Some farmers keep ancient traditions." },
-            { prompt: "Which group of people traditionally uses olive oil?", optionA: "Mediterranean", optionB: "Polar region", correctAnswer: "LEFT", explanation: "Olive oil is traditionally used in Mediterranean countries." },
-            { prompt: "What happens after olives are crushed?", optionA: "Frozen", optionB: "Separated", correctAnswer: "RIGHT", explanation: "The oil is separated from the water after crushing." }
+            { prompt: "I was stirring the dodol.", correctAnswer: "LEFT", explanation: "Past Continuous (was stirring) shows a continuous long action." },
+            { prompt: "The gas finished.", correctAnswer: "RIGHT", explanation: "Past Simple (finished) shows a sudden short action." },
+            { prompt: "We were decorating the house.", correctAnswer: "LEFT", explanation: "Past Continuous shows an action that takes time." },
+            { prompt: "The guests arrived.", correctAnswer: "RIGHT", explanation: "Arriving is a specific point in time (short action)." },
+            { prompt: "My mother was frying chicken.", correctAnswer: "LEFT", explanation: "Frying takes time (Long Action)." },
+            { prompt: "The phone rang.", correctAnswer: "RIGHT", explanation: "A phone ringing interrupts or happens suddenly." },
+            { prompt: "I was cutting onions when I cried.", correctAnswer: "LEFT", explanation: "Cutting onions is the 'Background' Long Action." },
+            { prompt: "We were eating when the lights went off.", correctAnswer: "RIGHT", explanation: "The lights going off is the 'Interruption' Short Action." },
+            { prompt: "Grandma dropped the spoon.", correctAnswer: "RIGHT", explanation: "Dropping is a quick, sudden movement." },
+            { prompt: "They were preparing food all night.", correctAnswer: "LEFT", explanation: "Preparing all night is a very long action!" }
         ];
 
         let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
         let holdCounter = 0;
-        const requiredHoldFrames = 12; // Confirm dalam 0.4s
+        const requiredHoldFrames = 12; 
         let currentDetectedSide = null;
 
         const videoElement = document.getElementById('webcam');
@@ -148,7 +147,6 @@
             document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
 
-            // Countdown Visual 3 Saat
             nextProgressBar.style.transition = 'none';
             nextProgressBar.style.width = '100%';
             setTimeout(() => {
@@ -156,7 +154,6 @@
                 nextProgressBar.style.width = '0%';
             }, 50);
 
-            // Automatik ke soalan seterusnya dalam 3 saat
             setTimeout(() => {
                 if (currentQuestionIndex < questions.length - 1) {
                     currentQuestionIndex++;
@@ -170,17 +167,15 @@
         }
 
         function showFinalScore() {
-            document.getElementById('feedback-text').innerText = "DONE!";
-            document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Score: ${score} / 11</span>`;
-            setTimeout(() => location.reload(), 5000);
+            document.getElementById('feedback-text').innerText = "WELL DONE!";
+            document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Total Score: ${score} / 10</span>`;
+            setTimeout(() => location.reload(), 6000);
         }
 
         function updateUI() {
             const q = questions[currentQuestionIndex];
             promptElement.innerText = q.prompt;
-            document.getElementById('label-left').innerText = q.optionA;
-            document.getElementById('label-right').innerText = q.optionB;
-            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / 11 | Score: ${score}`;
+            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / 10 | Score: ${score}`;
         }
     </script>
 </body>
