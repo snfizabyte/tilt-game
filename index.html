@@ -3,86 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grammar Tilt - Long vs Short Action with Images</title>
+    <title>Grammar Tilt - Visual Mode</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; text-align: center; margin: 0; padding: 10px; }
-        #game-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { font-size: 32px; color: #2c3e50; margin: 0; }
-        #score-display { font-size: 24px; font-weight: bold; color: #34495e; margin-bottom: 15px; }
-        #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #2c3e50; }
-        #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
-        #hold-progress { position: absolute; bottom: 0; left: 0; height: 10px; background: #27ae60; width: 0%; transition: width 0.05s linear; }
-        #prompt { font-size: 36px; line-height: 1.4; min-height: 110px; font-weight: 800; margin-bottom: 20px; color: #2c3e50; padding: 0 20px; }
+        #game-container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { font-size: 28px; color: #2c3e50; margin: 0; text-transform: uppercase; }
+        #score-display { font-size: 22px; font-weight: bold; color: #34495e; margin: 10px 0; }
         
-        /* Gaya untuk imej */
-        #question-image { 
-            max-width: 80%; /* Pastikan imej tidak terlalu besar */
-            max-height: 250px; /* Hadkan ketinggian imej */
-            margin-bottom: 25px; /* Jarak antara imej dan pilihan */
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: block; /* Pastikan ia berada di tengah */
-            margin-left: auto;
-            margin-right: auto;
-        }
+        /* Camera Box */
+        #video-wrapper { position: relative; width: 220px; height: 160px; margin: 0 auto 15px; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid #2c3e50; }
+        #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
+        #hold-progress { position: absolute; bottom: 0; left: 0; height: 8px; background: #27ae60; width: 0%; }
 
-        .options { display: flex; justify-content: space-between; gap: 30px; }
-        .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 32px; font-weight: 900; background: #fafafa; }
+        /* VISUAL ELEMENT */
+        #visual-icon { font-size: 100px; margin: 10px 0; display: block; }
+        #prompt { font-size: 34px; line-height: 1.2; min-height: 80px; font-weight: 800; color: #2c3e50; padding: 0 20px; margin-bottom: 20px; }
+        
+        .options { display: flex; justify-content: space-between; gap: 20px; }
+        .option-card { flex: 1; padding: 30px 15px; border: 6px solid #eee; border-radius: 20px; font-size: 28px; font-weight: 900; background: #fafafa; transition: 0.2s; }
         .tilting-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.05); }
         .tilting-right { border-color: #e67e22; background: #fff3e0; transform: scale(1.05); }
-        #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 40px; }
-        #feedback-text { font-size: 60px; font-weight: 900; }
-        #explanation-text { font-size: 32px; max-width: 800px; line-height: 1.5; margin-bottom: 30px; }
-        #progress-bar-container { width: 400px; height: 15px; background: #eee; border-radius: 10px; overflow: hidden; }
-        #progress-bar { width: 100%; height: 100%; background: #2c3e50; }
+
+        /* Feedback Overlay */
+        #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #feedback-text { font-size: 55px; font-weight: 900; }
+        #explanation-text { font-size: 28px; max-width: 700px; line-height: 1.4; margin: 20px 0; }
+        #progress-bar-container { width: 300px; height: 12px; background: #eee; border-radius: 10px; overflow: hidden; }
+        #progress-bar { width: 100%; height: 100%; background: #2c3e50; transition: width 3s linear; }
+
         .hidden { display: none !important; }
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
-        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; background: white; color: #2c3e50; font-weight: bold; border: none; }
+        .start-btn { padding: 15px 40px; font-size: 28px; cursor: pointer; border-radius: 15px; background: white; color: #2c3e50; font-weight: bold; border: none; }
     </style>
 </head>
 <body>
     <div id="start-overlay">
-        <h1>Grammar Tilt Quiz</h1>
-        <p style="font-size: 22px; margin-bottom: 30px;">Tilt LEFT for Long Action | RIGHT for Short Action</p>
+        <h1>Grammar Action Quiz</h1>
+        <p style="font-size: 20px; margin-bottom: 25px;">Tilt LEFT for Long Action | RIGHT for Short Action</p>
         <button class="start-btn" onclick="startGame()">START GAME 🚀</button>
     </div>
 
     <div id="game-container">
-        <h1>LONG ACTION vs SHORT ACTION</h1>
+        <h1>LONG vs SHORT ACTION</h1>
         <div id="score-display">Q: 1 / 10 | Score: 0</div>
         <div id="video-wrapper">
             <video id="webcam" playsinline></video>
             <div id="hold-progress"></div>
         </div>
         <div id="question-box">
+            <div id="visual-icon">⏳</div>
             <p id="prompt">Loading...</p>
-            <img id="question-image" src="" alt="Question Image" class="hidden"> <div class="options">
+            <div class="options">
                 <div id="option-left" class="option-card">⬅️ LONG ACTION</div>
                 <div id="option-right" class="option-card">SHORT ACTION ➡️</div>
             </div>
         </div>
+
         <div id="feedback-overlay" class="hidden">
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
             <div id="progress-bar-container"><div id="progress-bar"></div></div>
-            <p style="margin-top:10px; font-size:20px; color:#666;">Next question in 3 seconds...</p>
         </div>
     </div>
 
     <script>
         const questions = [
-            { prompt: "I was stirring the dodol.", correctAnswer: "LEFT", explanation: "Past Continuous (was stirring) shows a continuous long action.", imageUrl: "https://i.ibb.co/L840p0b/stirring-dodol.png" }, // Gantikan dengan URL imej anda
-            { prompt: "The gas finished.", correctAnswer: "RIGHT", explanation: "Past Simple (finished) shows a sudden short action.", imageUrl: "https://i.ibb.co/q1z6f5x/gas-finished.png" },
-            { prompt: "We were decorating the house.", correctAnswer: "LEFT", explanation: "Past Continuous shows an action that takes time.", imageUrl: "https://i.ibb.co/0K688J0/decorating-house.png" },
-            { prompt: "The guests arrived.", correctAnswer: "RIGHT", explanation: "Arriving is a specific point in time (short action).", imageUrl: "https://i.ibb.co/qDF5b6y/guests-arrived.png" },
-            { prompt: "My mother was frying chicken.", correctAnswer: "LEFT", explanation: "Frying takes time (Long Action).", imageUrl: "https://i.ibb.co/pLp125j/frying-chicken.png" },
-            { prompt: "The phone rang.", correctAnswer: "RIGHT", explanation: "A phone ringing interrupts or happens suddenly.", imageUrl: "https://i.ibb.co/vjC2f9C/phone-rang.png" },
-            { prompt: "I was cutting onions when I cried.", correctAnswer: "LEFT", explanation: "Cutting onions is the 'Background' Long Action.", imageUrl: "https://i.ibb.co/dDq9sR9/cutting-onions.png" },
-            { prompt: "We were eating when the lights went off.", correctAnswer: "RIGHT", explanation: "The lights going off is the 'Interruption' Short Action.", imageUrl: "https://i.ibb.co/p08D461/lights-went-off.png" },
-            { prompt: "Grandma dropped the spoon.", correctAnswer: "RIGHT", explanation: "Dropping is a quick, sudden movement.", imageUrl: "https://i.ibb.co/dgrfTjF/dropped-spoon.png" },
-            { prompt: "They were preparing food all night.", correctAnswer: "LEFT", explanation: "Preparing all night is a very long action!", imageUrl: "https://i.ibb.co/5cQ4yM7/preparing-food.png" }
+            { prompt: "I was stirring the dodol.", icon: "🥣", correctAnswer: "LEFT", explanation: "Past Continuous (was stirring) = Long Action." },
+            { prompt: "The gas finished.", icon: "💨", correctAnswer: "RIGHT", explanation: "The gas running out is a sudden Short Action." },
+            { prompt: "We were decorating the house.", icon: "🎨", correctAnswer: "LEFT", explanation: "Decorating takes a long time." },
+            { prompt: "The guests arrived.", icon: "🚪", correctAnswer: "RIGHT", explanation: "Arriving happens at a specific moment." },
+            { prompt: "My mother was frying chicken.", icon: "🍗", correctAnswer: "LEFT", explanation: "Frying is a continuous Long Action." },
+            { prompt: "The phone rang.", icon: "🔔", correctAnswer: "RIGHT", explanation: "A ring is a sudden interruption (Short Action)." },
+            { prompt: "I was cutting onions when I cried.", icon: "🧅", correctAnswer: "LEFT", explanation: "Cutting onions is the background Long Action." },
+            { prompt: "We were eating when the lights went off.", icon: "💡", correctAnswer: "RIGHT", explanation: "The lights going off is a sudden Short Action." },
+            { prompt: "Grandma dropped the spoon.", icon: "🥄", correctAnswer: "RIGHT", explanation: "Dropping something is a very quick Short Action." },
+            { prompt: "They were preparing food all night.", icon: "🍲", correctAnswer: "LEFT", explanation: "Preparing all night is a very Long Action." }
         ];
 
         let currentQuestionIndex = 0;
@@ -94,7 +91,7 @@
 
         const videoElement = document.getElementById('webcam');
         const promptElement = document.getElementById('prompt');
-        const questionImageElement = document.getElementById('question-image'); // Dapatkan elemen imej
+        const iconElement = document.getElementById('visual-icon');
         const holdBar = document.getElementById('hold-progress');
         const nextProgressBar = document.getElementById('progress-bar');
 
@@ -136,8 +133,7 @@
                 rightCard.classList.remove('tilting-right');
             }
 
-            let progress = (holdCounter / requiredHoldFrames) * 100;
-            holdBar.style.width = Math.min(progress, 100) + "%";
+            holdBar.style.width = ((holdCounter / requiredHoldFrames) * 100) + "%";
 
             if (holdCounter >= requiredHoldFrames) {
                 checkAnswer(currentDetectedSide);
@@ -181,24 +177,16 @@
         }
 
         function showFinalScore() {
-            document.getElementById('feedback-text').innerText = "WELL DONE!";
-            document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Total Score: ${score} / 10</span>`;
-            setTimeout(() => location.reload(), 6000);
+            document.getElementById('feedback-text').innerText = "DONE!";
+            document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Total: ${score} / 10</span>`;
+            setTimeout(() => location.reload(), 5000);
         }
 
         function updateUI() {
             const q = questions[currentQuestionIndex];
             promptElement.innerText = q.prompt;
-            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / ${questions.length} | Score: ${score}`;
-            
-            // Tunjukkan imej jika ada
-            if (q.imageUrl) {
-                questionImageElement.src = q.imageUrl;
-                questionImageElement.classList.remove('hidden');
-            } else {
-                questionImageElement.classList.add('hidden');
-                questionImageElement.src = ""; // Clear src if no image
-            }
+            iconElement.innerText = q.icon;
+            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / 10 | Score: ${score}`;
         }
     </script>
 </body>
