@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olive Oil Quiz - Easy Detect</title>
+    <title>Olive Oil Quiz - Fast 3s Delay</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
@@ -31,10 +31,11 @@
 </head>
 <body>
     <div id="start-overlay">
-        <h1>Olive Oil Tilt Quiz</h1>
-        <p style="font-size: 20px; margin-bottom: 30px;">Lightly tilt your head to answer!</p>
+        <h1>🫒 Olive Oil Tilt Quiz 🫒</h1>
+        <p style="font-size: 20px; margin-bottom: 30px;">Tilt your head to answer. 3 seconds between questions!</p>
         <button class="start-btn" onclick="startGame()">START GAME 🚀</button>
     </div>
+
     <div id="game-container">
         <h1>🫒 OLIVE OIL QUIZ 🫒</h1>
         <div id="score-display">Q: 1 / 11 | Score: 0</div>
@@ -53,8 +54,10 @@
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
             <div id="progress-bar-container"><div id="progress-bar"></div></div>
+            <p style="margin-top:10px; font-size:18px; color:#666;">Next question in 3 seconds...</p>
         </div>
     </div>
+
     <script>
         const questions = [
             { prompt: "Olive oil comes from olives.", optionA: "FALSE", optionB: "TRUE", correctAnswer: "RIGHT", explanation: "Olive oil is made from olives." },
@@ -74,7 +77,7 @@
         let score = 0;
         let isAnswered = false;
         let holdCounter = 0;
-        const requiredHoldFrames = 12; // Very fast confirm (0.4s)
+        const requiredHoldFrames = 12; // Confirm dalam 0.4s
         let currentDetectedSide = null;
 
         const videoElement = document.getElementById('webcam');
@@ -83,7 +86,6 @@
         const nextProgressBar = document.getElementById('progress-bar');
 
         const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-        // Increased confidence levels for harder lighting
         faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
         faceMesh.onResults(onResults);
 
@@ -104,7 +106,6 @@
             const leftCard = document.getElementById('option-left');
             const rightCard = document.getElementById('option-right');
 
-            // Sensitivity set to 0.02 (very easy to trigger)
             if (tilt > 0.02) { 
                 currentDetectedSide = "RIGHT";
                 leftCard.classList.remove('tilting-left');
@@ -147,6 +148,7 @@
             document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
 
+            // Countdown Visual 3 Saat
             nextProgressBar.style.transition = 'none';
             nextProgressBar.style.width = '100%';
             setTimeout(() => {
@@ -154,6 +156,7 @@
                 nextProgressBar.style.width = '0%';
             }, 50);
 
+            // Automatik ke soalan seterusnya dalam 3 saat
             setTimeout(() => {
                 if (currentQuestionIndex < questions.length - 1) {
                     currentQuestionIndex++;
