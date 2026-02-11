@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grammar Tilt - Long vs Short Action</title>
+    <title>Grammar Tilt - Long vs Short Action with Images</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
@@ -14,7 +14,20 @@
         #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #2c3e50; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
         #hold-progress { position: absolute; bottom: 0; left: 0; height: 10px; background: #27ae60; width: 0%; transition: width 0.05s linear; }
-        #prompt { font-size: 36px; line-height: 1.4; min-height: 110px; font-weight: 800; margin-bottom: 30px; color: #2c3e50; padding: 0 20px; }
+        #prompt { font-size: 36px; line-height: 1.4; min-height: 110px; font-weight: 800; margin-bottom: 20px; color: #2c3e50; padding: 0 20px; }
+        
+        /* Gaya untuk imej */
+        #question-image { 
+            max-width: 80%; /* Pastikan imej tidak terlalu besar */
+            max-height: 250px; /* Hadkan ketinggian imej */
+            margin-bottom: 25px; /* Jarak antara imej dan pilihan */
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: block; /* Pastikan ia berada di tengah */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         .options { display: flex; justify-content: space-between; gap: 30px; }
         .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 32px; font-weight: 900; background: #fafafa; }
         .tilting-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.05); }
@@ -45,7 +58,7 @@
         </div>
         <div id="question-box">
             <p id="prompt">Loading...</p>
-            <div class="options">
+            <img id="question-image" src="" alt="Question Image" class="hidden"> <div class="options">
                 <div id="option-left" class="option-card">⬅️ LONG ACTION</div>
                 <div id="option-right" class="option-card">SHORT ACTION ➡️</div>
             </div>
@@ -60,16 +73,16 @@
 
     <script>
         const questions = [
-            { prompt: "I was stirring the dodol.", correctAnswer: "LEFT", explanation: "Past Continuous (was stirring) shows a continuous long action." },
-            { prompt: "The gas finished.", correctAnswer: "RIGHT", explanation: "Past Simple (finished) shows a sudden short action." },
-            { prompt: "We were decorating the house.", correctAnswer: "LEFT", explanation: "Past Continuous shows an action that takes time." },
-            { prompt: "The guests arrived.", correctAnswer: "RIGHT", explanation: "Arriving is a specific point in time (short action)." },
-            { prompt: "My mother was frying chicken.", correctAnswer: "LEFT", explanation: "Frying takes time (Long Action)." },
-            { prompt: "The phone rang.", correctAnswer: "RIGHT", explanation: "A phone ringing interrupts or happens suddenly." },
-            { prompt: "I was cutting onions when I cried.", correctAnswer: "LEFT", explanation: "Cutting onions is the 'Background' Long Action." },
-            { prompt: "We were eating when the lights went off.", correctAnswer: "RIGHT", explanation: "The lights going off is the 'Interruption' Short Action." },
-            { prompt: "Grandma dropped the spoon.", correctAnswer: "RIGHT", explanation: "Dropping is a quick, sudden movement." },
-            { prompt: "They were preparing food all night.", correctAnswer: "LEFT", explanation: "Preparing all night is a very long action!" }
+            { prompt: "I was stirring the dodol.", correctAnswer: "LEFT", explanation: "Past Continuous (was stirring) shows a continuous long action.", imageUrl: "https://i.ibb.co/L840p0b/stirring-dodol.png" }, // Gantikan dengan URL imej anda
+            { prompt: "The gas finished.", correctAnswer: "RIGHT", explanation: "Past Simple (finished) shows a sudden short action.", imageUrl: "https://i.ibb.co/q1z6f5x/gas-finished.png" },
+            { prompt: "We were decorating the house.", correctAnswer: "LEFT", explanation: "Past Continuous shows an action that takes time.", imageUrl: "https://i.ibb.co/0K688J0/decorating-house.png" },
+            { prompt: "The guests arrived.", correctAnswer: "RIGHT", explanation: "Arriving is a specific point in time (short action).", imageUrl: "https://i.ibb.co/qDF5b6y/guests-arrived.png" },
+            { prompt: "My mother was frying chicken.", correctAnswer: "LEFT", explanation: "Frying takes time (Long Action).", imageUrl: "https://i.ibb.co/pLp125j/frying-chicken.png" },
+            { prompt: "The phone rang.", correctAnswer: "RIGHT", explanation: "A phone ringing interrupts or happens suddenly.", imageUrl: "https://i.ibb.co/vjC2f9C/phone-rang.png" },
+            { prompt: "I was cutting onions when I cried.", correctAnswer: "LEFT", explanation: "Cutting onions is the 'Background' Long Action.", imageUrl: "https://i.ibb.co/dDq9sR9/cutting-onions.png" },
+            { prompt: "We were eating when the lights went off.", correctAnswer: "RIGHT", explanation: "The lights going off is the 'Interruption' Short Action.", imageUrl: "https://i.ibb.co/p08D461/lights-went-off.png" },
+            { prompt: "Grandma dropped the spoon.", correctAnswer: "RIGHT", explanation: "Dropping is a quick, sudden movement.", imageUrl: "https://i.ibb.co/dgrfTjF/dropped-spoon.png" },
+            { prompt: "They were preparing food all night.", correctAnswer: "LEFT", explanation: "Preparing all night is a very long action!", imageUrl: "https://i.ibb.co/5cQ4yM7/preparing-food.png" }
         ];
 
         let currentQuestionIndex = 0;
@@ -81,6 +94,7 @@
 
         const videoElement = document.getElementById('webcam');
         const promptElement = document.getElementById('prompt');
+        const questionImageElement = document.getElementById('question-image'); // Dapatkan elemen imej
         const holdBar = document.getElementById('hold-progress');
         const nextProgressBar = document.getElementById('progress-bar');
 
@@ -175,7 +189,16 @@
         function updateUI() {
             const q = questions[currentQuestionIndex];
             promptElement.innerText = q.prompt;
-            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / 10 | Score: ${score}`;
+            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / ${questions.length} | Score: ${score}`;
+            
+            // Tunjukkan imej jika ada
+            if (q.imageUrl) {
+                questionImageElement.src = q.imageUrl;
+                questionImageElement.classList.remove('hidden');
+            } else {
+                questionImageElement.classList.add('hidden');
+                questionImageElement.src = ""; // Clear src if no image
+            }
         }
     </script>
 </body>
