@@ -3,110 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Head Tilt Grammar Game - SMK Aman Jaya</title>
-    
+    <title>Grammar Tilt - Long vs Short Action</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f4f6; text-align: center; margin: 0; padding: 10px; }
-        #game-container { max-width: 950px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        
-        /* Heading & Score */
-        h1 { font-size: 32px; color: #1e293b; margin: 0; }
-        #score-display { font-size: 24px; font-weight: bold; color: #475569; margin: 10px 0; }
-
-        /* Video Box */
-        #video-wrapper { position: relative; width: 220px; height: 165px; margin: 0 auto 15px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #1e293b; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; text-align: center; margin: 0; padding: 10px; }
+        #game-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { font-size: 32px; color: #2c3e50; margin: 0; }
+        #score-display { font-size: 24px; font-weight: bold; color: #34495e; margin-bottom: 15px; }
+        #video-wrapper { position: relative; width: 240px; height: 180px; margin: 0 auto 20px; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid #2c3e50; }
         #webcam { width: 100%; height: 100%; transform: scaleX(-1); }
-        #hold-progress { position: absolute; bottom: 0; left: 0; height: 8px; background: #22c55e; width: 0%; }
-
-        /* Question Area */
-        #prompt { font-size: 36px; line-height: 1.3; min-height: 100px; font-weight: 800; color: #1e293b; padding: 0 20px; margin-bottom: 20px; }
-
-        /* Buttons / Options */
-        .options { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-        .option-card { padding: 30px 20px; border: 6px solid #e2e8f0; border-radius: 20px; font-size: 24px; font-weight: 900; background: #fafafa; transition: 0.2s; width: 28%; }
-        
-        .opt-continuous { color: #3b82f6; } /* Blue */
-        .opt-simple { color: #ef4444; }     /* Red */
-        .opt-both { color: #8b5cf6; }       /* Purple */
-
-        /* Visual Highlights when Tilting */
-        .active-left { border-color: #3b82f6; background: #eff6ff; transform: scale(1.05); }
-        .active-right { border-color: #ef4444; background: #fef2f2; transform: scale(1.05); }
-        .active-center { border-color: #8b5cf6; background: #f5f3ff; transform: scale(1.1); }
-
-        /* Feedback Overlay */
-        #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #hold-progress { position: absolute; bottom: 0; left: 0; height: 10px; background: #27ae60; width: 0%; transition: width 0.05s linear; }
+        #prompt { font-size: 36px; line-height: 1.4; min-height: 110px; font-weight: 800; margin-bottom: 30px; color: #2c3e50; padding: 0 20px; }
+        .options { display: flex; justify-content: space-between; gap: 30px; }
+        .option-card { flex: 1; padding: 40px 20px; border: 6px solid #eee; border-radius: 20px; font-size: 32px; font-weight: 900; background: #fafafa; }
+        .tilting-left { border-color: #3498db; background: #e1f5fe; transform: scale(1.05); }
+        .tilting-right { border-color: #e67e22; background: #fff3e0; transform: scale(1.05); }
+        #feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 40px; }
         #feedback-text { font-size: 60px; font-weight: 900; }
-        #explanation-text { font-size: 32px; max-width: 800px; line-height: 1.4; margin: 20px 0; color: #334155; }
-        #next-bar-container { width: 400px; height: 15px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
-        #next-bar { width: 100%; height: 100%; background: #1e293b; }
-
+        #explanation-text { font-size: 32px; max-width: 800px; line-height: 1.5; margin-bottom: 30px; }
+        #progress-bar-container { width: 400px; height: 15px; background: #eee; border-radius: 10px; overflow: hidden; }
+        #progress-bar { width: 100%; height: 100%; background: #2c3e50; }
         .hidden { display: none !important; }
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e293b; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
-        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; border: none; background: #3b82f6; color: white; font-weight: bold; }
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
+        .start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; border-radius: 15px; background: white; color: #2c3e50; font-weight: bold; border: none; }
     </style>
 </head>
 <body>
-
     <div id="start-overlay">
-        <h1>🎮 Grammar Tilt Game</h1>
-        <p style="font-size: 22px; margin: 20px 0;">LEFT: Continuous | RIGHT: Simple | CENTER: Both</p>
+        <h1>Grammar Tilt Quiz</h1>
+        <p style="font-size: 22px; margin-bottom: 30px;">Tilt LEFT for Long Action | RIGHT for Short Action</p>
         <button class="start-btn" onclick="startGame()">START GAME 🚀</button>
     </div>
 
     <div id="game-container">
-        <h1>PAST SIMPLE vs CONTINUOUS</h1>
+        <h1>LONG ACTION vs SHORT ACTION</h1>
         <div id="score-display">Q: 1 / 10 | Score: 0</div>
-        
         <div id="video-wrapper">
             <video id="webcam" playsinline></video>
             <div id="hold-progress"></div>
         </div>
-
         <div id="question-box">
-            <p id="prompt">Loading question...</p>
+            <p id="prompt">Loading...</p>
             <div class="options">
-                <div id="card-left" class="option-card opt-continuous">⬅️ TILT LEFT<br>(Continuous)</div>
-                <div id="card-center" class="option-card opt-both">⬆️ STAY CENTER<br>(Both)</div>
-                <div id="card-right" class="option-card opt-simple">TILT RIGHT ➡️<br>(Simple)</div>
+                <div id="option-left" class="option-card">⬅️ LONG ACTION</div>
+                <div id="option-right" class="option-card">SHORT ACTION ➡️</div>
             </div>
         </div>
-
         <div id="feedback-overlay" class="hidden">
             <h2 id="feedback-text"></h2>
             <p id="explanation-text"></p>
-            <div id="next-bar-container"><div id="next-bar"></div></div>
-            <p style="margin-top:10px; font-size:20px; color:#64748b;">Next question in 3 seconds...</p>
+            <div id="progress-bar-container"><div id="progress-bar"></div></div>
+            <p style="margin-top:10px; font-size:20px; color:#666;">Next question in 3 seconds...</p>
         </div>
     </div>
 
     <script>
         const questions = [
-            { text: "The chef was cooking dinner.", answer: "LEFT" },
-            { text: "The plates fell on the floor.", answer: "RIGHT" },
-            { text: "While Aina was taking photos, Ravi called her name.", answer: "CENTER" },
-            { text: "They were dancing at the festival.", answer: "LEFT" },
-            { text: "The music stopped suddenly.", answer: "RIGHT" },
-            { text: "While we were walking home, it started to rain.", answer: "CENTER" },
-            { text: "She was studying for her exam.", answer: "LEFT" },
-            { text: "Her phone rang loudly.", answer: "RIGHT" },
-            { text: "While the children were playing, their parents watched them.", answer: "CENTER" },
-            { text: "The lights went out during the performance.", answer: "RIGHT" }
+            { prompt: "I was stirring the dodol.", correctAnswer: "LEFT", explanation: "Past Continuous (was stirring) shows a continuous long action." },
+            { prompt: "The gas finished.", correctAnswer: "RIGHT", explanation: "Past Simple (finished) shows a sudden short action." },
+            { prompt: "We were decorating the house.", correctAnswer: "LEFT", explanation: "Past Continuous shows an action that takes time." },
+            { prompt: "The guests arrived.", correctAnswer: "RIGHT", explanation: "Arriving is a specific point in time (short action)." },
+            { prompt: "My mother was frying chicken.", correctAnswer: "LEFT", explanation: "Frying takes time (Long Action)." },
+            { prompt: "The phone rang.", correctAnswer: "RIGHT", explanation: "A phone ringing interrupts or happens suddenly." },
+            { prompt: "I was cutting onions when I cried.", correctAnswer: "LEFT", explanation: "Cutting onions is the 'Background' Long Action." },
+            { prompt: "We were eating when the lights went off.", correctAnswer: "RIGHT", explanation: "The lights going off is the 'Interruption' Short Action." },
+            { prompt: "Grandma dropped the spoon.", correctAnswer: "RIGHT", explanation: "Dropping is a quick, sudden movement." },
+            { prompt: "They were preparing food all night.", correctAnswer: "LEFT", explanation: "Preparing all night is a very long action!" }
         ];
 
-        let currentQ = 0;
+        let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
         let holdCounter = 0;
-        const requiredHold = 15; // ~0.5 second hold
-        let sideDetected = null;
+        const requiredHoldFrames = 12; 
+        let currentDetectedSide = null;
 
         const videoElement = document.getElementById('webcam');
         const promptElement = document.getElementById('prompt');
         const holdBar = document.getElementById('hold-progress');
+        const nextProgressBar = document.getElementById('progress-bar');
 
         const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
         faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
@@ -126,84 +102,80 @@
             const landmarks = results.multiFaceLandmarks[0];
             let tilt = landmarks[33].y - landmarks[263].y;
 
-            const cL = document.getElementById('card-left');
-            const cR = document.getElementById('card-right');
-            const cC = document.getElementById('card-center');
+            const leftCard = document.getElementById('option-left');
+            const rightCard = document.getElementById('option-right');
 
-            // Reset visual highlights
-            cL.classList.remove('active-left');
-            cR.classList.remove('active-right');
-            cC.classList.remove('active-center');
-
-            if (tilt > 0.03) { 
-                sideDetected = "RIGHT";
-                cR.classList.add('active-right');
+            if (tilt > 0.02) { 
+                currentDetectedSide = "RIGHT";
+                leftCard.classList.remove('tilting-left');
+                rightCard.classList.add('tilting-right');
                 holdCounter++;
-            } else if (tilt < -0.03) {
-                sideDetected = "LEFT";
-                cL.classList.add('active-left');
+            } else if (tilt < -0.02) {
+                currentDetectedSide = "LEFT";
+                rightCard.classList.remove('tilting-right');
+                leftCard.classList.add('tilting-left');
                 holdCounter++;
             } else {
-                // To detect "CENTER/BOTH", murid kena tegak
-                sideDetected = "CENTER";
-                cC.classList.add('active-center');
-                holdCounter++;
+                currentDetectedSide = null;
+                holdCounter = 0;
+                leftCard.classList.remove('tilting-left');
+                rightCard.classList.remove('tilting-right');
             }
 
-            holdBar.style.width = ((holdCounter / requiredHold) * 100) + "%";
+            let progress = (holdCounter / requiredHoldFrames) * 100;
+            holdBar.style.width = Math.min(progress, 100) + "%";
 
-            if (holdCounter >= requiredHold) {
-                checkAnswer(sideDetected);
+            if (holdCounter >= requiredHoldFrames) {
+                checkAnswer(currentDetectedSide);
                 holdCounter = 0;
+                holdBar.style.width = "0%";
             }
         }
 
         function checkAnswer(side) {
             isAnswered = true;
-            const q = questions[currentQ];
+            const q = questions[currentQuestionIndex];
             const feedbackText = document.getElementById('feedback-text');
-            const correctAns = q.answer;
-
-            if (side === correctAns) {
+            if (side === q.correctAnswer) {
                 score++;
                 feedbackText.innerText = "🌟 CORRECT! 🌟";
-                feedbackText.style.color = "#22c55e";
+                feedbackText.style.color = "#27ae60";
             } else {
-                feedbackText.innerText = "❌ WRONG ❌";
-                feedbackText.style.color = "#ef4444";
+                feedbackText.innerText = "❌ INCORRECT ❌";
+                feedbackText.style.color = "#e74c3c";
             }
-            
-            document.getElementById('explanation-text').innerText = `Answer: ${correctAns === 'LEFT' ? 'Continuous' : correctAns === 'RIGHT' ? 'Simple' : 'Both (Simple + Continuous)'}`;
+            document.getElementById('explanation-text').innerText = q.explanation;
             document.getElementById('feedback-overlay').classList.remove('hidden');
 
-            const nextBar = document.getElementById('next-bar');
-            nextBar.style.transition = 'none';
-            nextBar.style.width = '100%';
-            setTimeout(() => { nextBar.style.transition = 'width 3s linear'; nextBar.style.width = '0%'; }, 50);
+            nextProgressBar.style.transition = 'none';
+            nextProgressBar.style.width = '100%';
+            setTimeout(() => {
+                nextProgressBar.style.transition = 'width 3s linear';
+                nextProgressBar.style.width = '0%';
+            }, 50);
 
             setTimeout(() => {
-                if (currentQ < questions.length - 1) {
-                    currentQ++;
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
                     isAnswered = false;
                     document.getElementById('feedback-overlay').classList.add('hidden');
                     updateUI();
                 } else {
-                    endGame();
+                    showFinalScore();
                 }
             }, 3000);
         }
 
-        function updateUI() {
-            promptElement.innerText = questions[currentQ].text;
-            document.getElementById('score-display').innerText = `Q: ${currentQ + 1} / 10 | Score: ${score}`;
+        function showFinalScore() {
+            document.getElementById('feedback-text').innerText = "WELL DONE!";
+            document.getElementById('explanation-text').innerHTML = `<span style="font-size: 50px;">Total Score: ${score} / 10</span>`;
+            setTimeout(() => location.reload(), 6000);
         }
 
-        function endGame() {
-            document.getElementById('game-container').innerHTML = `
-                <h1 style="font-size:50px; margin-top:50px;">🎉 QUIZ COMPLETED!</h1>
-                <p style="font-size:40px;">Your Score: <strong>${score} / 10</strong></p>
-                <button class="start-btn" onclick="location.reload()">RESTART 🔄</button>
-            `;
+        function updateUI() {
+            const q = questions[currentQuestionIndex];
+            promptElement.innerText = q.prompt;
+            document.getElementById('score-display').innerText = `Q: ${currentQuestionIndex + 1} / 10 | Score: ${score}`;
         }
     </script>
 </body>
